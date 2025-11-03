@@ -152,8 +152,9 @@ function ListingPage() {
   }
 
 
-  const handleBooking = () => {
-
+  const handleBooking = (listing: Listing) => {
+      // skapar en booknign baserat på listings id 
+      console.log(listing.id)
   }
 
   return (
