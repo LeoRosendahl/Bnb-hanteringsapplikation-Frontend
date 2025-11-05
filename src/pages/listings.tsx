@@ -6,6 +6,7 @@ import { AuthContext } from "../context/authContext";
 import { useNavigate } from "react-router-dom";
 import '../App.css'
 import ListingCard from '../components/ListingCard';
+import { createBooking } from '../services/bookings';
 
 function ListingPage() {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ function ListingPage() {
 
   // gör att datan vi sätter in i listings matchar interfacet jag skapade innan
   const [listings, setListings] = useState<Listing[]>([]);
+
   // makes update form exclusive to listing id 
   const [updatingListingId, setUpdatingListingId] = useState<string | null>(null);
   const [updateData, setUpdateData] = useState({
@@ -23,6 +25,8 @@ function ListingPage() {
     price_per_night: "",
     availability: true
   });
+
+  // listing data and form states
   const [showForm, setShowForm] = useState(false)
   const [postListingData, setPostListingData] = useState({
     name: "",
@@ -32,6 +36,14 @@ function ListingPage() {
     availability: true
   })
 
+  // booking states
+  const [bookingListingId, setBookingListingId] = useState<string | null>(null);
+  const [bookingData, setBookingData] = useState({
+    check_in_date: "",
+    check_out_date: "",
+  })
+
+  // inputs for  create listing form
   const propertyName = (e: ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value
     setPostListingData({
@@ -145,16 +157,59 @@ function ListingPage() {
       setListings(prev => prev.map(l => l.id === updatingListingId ? updatedListing : l));
 
       setUpdatingListingId(null)
-    }catch(error) {
+    } catch (error) {
       console.error("Failed to update listing", error)
     }
 
   }
 
+  // handle booking function 
+  const handleBookingClick = async (listing: Listing) => {
+    if (!user) {
+      alert("Please login to make this booking")
+      return;
+    }
 
-  const handleBooking = (listing: Listing) => {
-      // skapar en booknign baserat på listings id 
-      console.log(listing.id)
+    if (user.id === listing.listing_agent_id || user.id === listing.listing_agent?.id) {
+      alert("You cannot book your own listing");
+      return;
+    }
+    // will show the booking form
+    setBookingListingId(listing.id)
+  }
+
+  const handleBookingSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bookingListingId || !user) return;
+
+    const listing = listings.find(l => l.id === bookingListingId);
+    if (!listing) return;
+
+    const checkIn = new Date(bookingData.check_in_date);
+    const checkOut = new Date(bookingData.check_out_date);
+
+    const total_price = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24) * listing.price_per_night;
+
+    const newBooking = {
+      check_in_date: bookingData.check_in_date,
+      check_out_date: bookingData.check_out_date,
+      total_price,
+      listing_id: bookingListingId,
+      user_id: user.id
+    };
+
+    try {
+      const response = await createBooking(newBooking);
+      alert(`Booking was successful! Total price: ${total_price} SEK`);
+      console.log("Created booking:", response.booking);
+
+      //reset form
+      setBookingListingId(null);
+      setBookingData({ check_in_date: "", check_out_date: "" })
+    } catch (error) {
+      console.error("Failed to create booking", error)
+      alert("Could not create your booking")
+    }
   }
 
   return (
@@ -163,6 +218,23 @@ function ListingPage() {
       {isLoggedIn ? (
         <button onClick={logout}>Logout</button>
       ) : null}
+
+      {/* fake inputs and logos just to make site look better */}
+      <div className="navbar">
+        <h2 className="logo">Renta<span className="logo-accent">Place</span></h2>
+        <input type="text" placeholder="Search..." className="search-input" />
+
+        <div className="menu">
+          <button className="menu-btn">Menu ▾</button>
+          <div className="dropdown">
+            <p onClick={() => navigate("/login")}>Login</p>
+            <p onClick={() => navigate("/register")}>Register</p>
+          </div>
+        </div>
+      </div>
+
+      <button className='lgHomeBtn' onClick={() => { navigate("/login") }}>Login/Sign up</button>
+
       {/* button that toggles show form on and of */}
       <div className='createListing'>
         <button className='createListingButton'
@@ -200,21 +272,29 @@ function ListingPage() {
       <h1>Listings</h1>
       {listings.length > 0 ? (
         <ul>
-          {listings.map(listing => <ListingCard key={listing.id} listing={listing} handleDeleteClick={handleDeleteClick} handleEditClick={handleEditClick} handleBooking={handleBooking}/>)}
+          {listings.map(listing => <ListingCard
+            key={listing.id} listing={listing}
+            handleDeleteClick={handleDeleteClick}
+            handleEditClick={handleEditClick}
+            handleBookingClick={handleBookingClick}
+            bookingListingId={bookingListingId}
+            bookingData={bookingData}
+            setBookingData={setBookingData}
+            handleBookingSubmit={handleBookingSubmit} />)}
         </ul>
       ) : (
         <p>No listings yet...</p>
       )}
       {updatingListingId && (
-           <form onSubmit={handleUpdateSubmit}>
-             <input type='text' placeholder='Name' value={updateData.name} onChange={e => setUpdateData({ ...updateData, name: e.target.value })} />
-             <input type='text' placeholder='Location' value={updateData.location} onChange={e => setUpdateData({ ...updateData, location: e.target.value })} />
-             <input type='number' placeholder='Price per night' value={updateData.price_per_night} onChange={e => setUpdateData({ ...updateData, price_per_night: e.target.value })} />
-             <textarea placeholder='Description' value={updateData.description} onChange={e => setUpdateData({ ...updateData, description: e.target.value })} ></textarea>
-             <button type='submit'>Save</button>
-             <button type='button' onClick={() => setUpdatingListingId(null)}>Cancel</button>
-           </form>
-         )}
+        <form onSubmit={handleUpdateSubmit}>
+          <input type='text' placeholder='Name' value={updateData.name} onChange={e => setUpdateData({ ...updateData, name: e.target.value })} />
+          <input type='text' placeholder='Location' value={updateData.location} onChange={e => setUpdateData({ ...updateData, location: e.target.value })} />
+          <input type='number' placeholder='Price per night' value={updateData.price_per_night} onChange={e => setUpdateData({ ...updateData, price_per_night: e.target.value })} />
+          <textarea placeholder='Description' value={updateData.description} onChange={e => setUpdateData({ ...updateData, description: e.target.value })} ></textarea>
+          <button type='submit'>Save</button>
+          <button type='button' onClick={() => setUpdatingListingId(null)}>Cancel</button>
+        </form>
+      )}
     </div>
   );
 }

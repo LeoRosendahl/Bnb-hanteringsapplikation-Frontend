@@ -15,13 +15,13 @@ export async function getBookings() {
     return data
 }
 // create booking
-export async function createBooking(bookingData: NewBooking): Promise<{ booking: Booking }>  {
-    const response = await fetch(`${API_URL}/bookings`, {
+export async function createBooking(bookingData: NewBooking): Promise<{ booking: Booking }> {
+  const response = await fetch(`${API_URL}/bookings`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json', 
+      'Content-Type': 'application/json',
     },
-    body: JSON.stringify(bookingData),  
+    body: JSON.stringify(bookingData),
     credentials: "include",
   });
 
@@ -29,6 +29,5 @@ export async function createBooking(bookingData: NewBooking): Promise<{ booking:
     throw new Error('Failed to create booking');
   }
 
-  const data = await response.json();
-  return data;
+  return response.json();
 }
