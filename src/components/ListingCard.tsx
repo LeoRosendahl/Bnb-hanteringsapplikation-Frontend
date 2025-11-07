@@ -10,6 +10,7 @@ type ListingCardProps = {
     bookingData: { check_in_date: string; check_out_date: string };
     // type define strict to string from listings.tsx
     setBookingData: React.Dispatch<React.SetStateAction<{ check_in_date: string; check_out_date: string }>>;
+    setBookingListingId: React.Dispatch<React.SetStateAction<string | null>>,
     handleBookingSubmit: (e: React.FormEvent) => Promise<void>
 }
 
@@ -21,7 +22,8 @@ export default function ListingCard({
     bookingListingId,
     bookingData,
     setBookingData,
-    handleBookingSubmit
+    handleBookingSubmit,
+    setBookingListingId
 }: ListingCardProps) {
     const { user } = useContext(AuthContext)
 
@@ -81,7 +83,10 @@ export default function ListingCard({
                     </label>
                     <div className="bookingButtons">
                         <button className="btnPrimary" type="submit">Confirm Booking</button>
-                        <button className="btnSecondary" type="button" onClick={() => setBookingData({ check_in_date: "", check_out_date: "" })}>Cancel</button>
+                        <button className="btnSecondary" type="button" onClick={() => {
+                            setBookingListingId(null);
+                            setBookingData({ check_in_date: "", check_out_date: "" });
+                        }}>Close</button>
                     </div>
                 </form>
             )}

@@ -97,7 +97,7 @@ function ListingPage() {
         const exists = prev.some(l => l.id === newListing.id);
         return exists ? prev : [...prev, newListing];
       });
-
+setShowForm(false);
 
     } catch (error) {
 
@@ -233,14 +233,18 @@ function ListingPage() {
         </div>
       </div>
 
-      <button className='lgHomeBtn' onClick={() => { navigate("/login") }}>Login/Sign up</button>
-
       {/* button that toggles show form on and of */}
-      <div className='createListing'>
-        <button className='createListingButton'
-          onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Cancel' : 'Create listing'}</button>
+      {isLoggedIn ? (
+        <div className='createListing'>
+          <button className='createListingButton'
+            onClick={() => setShowForm(!showForm)}>
+            {showForm ? 'Cancel' : 'Create listing'}</button>
+        </div>
+      ) : <div className='createListing'>
+        <button className='createListingButton' onClick={() => { alert("Login or register to create Listing") }}>Create Listing</button>
       </div>
+      }
+
       {showForm && (
         <form onSubmit={handleSubmit}>
           <input type='text' placeholder='Poperty name'
@@ -251,7 +255,7 @@ function ListingPage() {
             value={postListingData.location}
             onChange={locationInput}
             required></input>
-          <input type='number' placeholder='Price per night'
+          <input type='number' placeholder='Price per night (SEK)'
             value={postListingData.price_per_night}
             onChange={priceInput}
             required></input>
@@ -278,6 +282,7 @@ function ListingPage() {
             handleEditClick={handleEditClick}
             handleBookingClick={handleBookingClick}
             bookingListingId={bookingListingId}
+            setBookingListingId={setBookingListingId}
             bookingData={bookingData}
             setBookingData={setBookingData}
             handleBookingSubmit={handleBookingSubmit} />)}
